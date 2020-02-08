@@ -1,5 +1,7 @@
 package com.nan.algorithm.linear.sorting;
 
+import java.util.Arrays;
+
 /**
  * @author nanzhang
  * @date 2020/2/8
@@ -15,7 +17,7 @@ public class HeapSorting extends BaseSorting {
         buildMaxHeap(numbers, numbers.length);
         for (int index = numbers.length - 1; index > 0; index--) {
             exchange(numbers, 0, index);
-            maintainMaxHeap(numbers, 0, index + 1);
+            maintainMaxHeap(numbers, 0, index);
         }
     }
 
@@ -33,7 +35,7 @@ public class HeapSorting extends BaseSorting {
         if (leftIndex < length && array[root] < array[leftIndex]) {
             largestIndex = leftIndex;
         }
-        if (rightIndex < length && array[root] < array[rightIndex]) {
+        if (rightIndex < length && array[largestIndex] < array[rightIndex]) {
             largestIndex = rightIndex;
         }
 

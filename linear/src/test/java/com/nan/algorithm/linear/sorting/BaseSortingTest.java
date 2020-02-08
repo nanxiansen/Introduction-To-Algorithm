@@ -10,7 +10,7 @@ import java.util.Arrays;
  */
 public class BaseSortingTest {
 
-    private Integer[] array = {1, 100, 5, 88, 89, 2, 99, 46, 33, 31, 102};
+    private Integer[] array = {1, 10, 5, 7, 8, 2, 9, 6, 3, 3, 4, 11};
 
     @Test
     public void testHeapSorting() {

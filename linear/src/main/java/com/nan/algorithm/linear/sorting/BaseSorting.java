@@ -10,6 +10,7 @@ public abstract class BaseSorting {
 
     public BaseSorting(Integer[] numbers) {
         this.numbers = numbers;
+        sortArray();
     }
 
     /**
