@@ -1,5 +1,5 @@
 .idea/*
 target/*
 .DS_Store
-linear-data-structure/target/*
-linear-data-structure/.idea/*
+linear/target/*
+linear/.idea/*
