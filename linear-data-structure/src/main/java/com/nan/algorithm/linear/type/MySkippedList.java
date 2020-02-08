@@ -18,6 +18,7 @@ public class MySkippedList<E extends Object> {
 
     /**
      * In head.nextNodes, the max number of index which points to a nonNull node
+     * 注意：currentMaxLayerIndex指的是最大层的索引值，相当于层数-1
      */
     private int currentMaxLayerIndex = 0;
 
@@ -32,12 +33,6 @@ public class MySkippedList<E extends Object> {
             this.value = value;
             this.nextNodes = new Node[count];
             this.previousNodes = new Node[count];
-        }
-
-        Node(T value, Node<T>[] nextNodes, Node<T>[] previousNodes) {
-            this.value = value;
-            this.nextNodes = nextNodes;
-            this.previousNodes = previousNodes;
         }
 
         @Override
@@ -93,107 +88,129 @@ public class MySkippedList<E extends Object> {
         if (e == null) {
             return;
         }
-        Node<E> insertedNode = new Node<>(e, generateLayerCount());
         // empty list
-        if (head.nextNodes[currentMaxLayerIndex] == null) {
-            head.nextNodes[0] = insertedNode;
-            return;
-        }
-        // not empty list: iterate and compare layer by layer
-        Node<E> currentNode = findNearByNodeForAdd(insertedNode);
-        if (currentNode == null) {
-            return;
-        }
-        Node<E> nextNode = currentNode.nextNodes[0];
-
-        // nextNode == null说明，currentNode已经是最后一个元素了，可以直接将e插入到最后
-        if (nextNode == null) {
-            insertNotEnd(currentNode, insertedNode, 0);
+        if (currentMaxLayerIndex == 0 && head.nextNodes[0] == null) {
+            head.nextNodes[0] = new Node<>(e, 1);
+            size++;
             return;
         }
 
-        // 最低层
-        int compare = compare(nextNode.value, e);
-        if (compare > 0) {
-            // 从nextNode向后遍历
-            while (nextNode != null && compare(nextNode.value, e) > 0) {
-                currentNode = nextNode;
-                nextNode = currentNode.nextNodes[0];
+        // 维护删除操作对currentMaxLayerIndex的影响
+        optimizeLayerIndex();
+        // find near by node
+        Map<Integer, Node<E>> beforeNodeMap = new HashMap<>();
+        Node<E> currentNode = iterateToNearBy(e, beforeNodeMap);
+
+        // 底层，先向后遍历
+        while (currentNode.nextNodes[0] != null && compare(currentNode.nextNodes[0].value, e) > 0) {
+            currentNode = currentNode.nextNodes[0];
+        }
+        beforeNodeMap.put(0, currentNode);
+
+        // check if already in
+        if (alreadyIn(currentNode, e)) {
+            return;
+        }
+
+        // insert layer by layer
+        Node<E> insertedNode = new Node<>(e, generateMaxLayerIndex() + 1);
+        for (int layer = 0; layer < insertedNode.nextNodes.length; layer++) {
+            Node<E> beforeNode = beforeNodeMap.get(layer);
+            if (beforeNode == null) {
+                beforeNode = head;
             }
+            insertAfter(beforeNode, insertedNode, layer);
         }
 
-        // nextNode == null说明，currentNode已经是最后一个元素了，可以直接将e插入到最后
-        if (nextNode == null) {
-            insertNotEnd(currentNode, insertedNode, 0);
-            return;
-        }
-
-        if (compare(nextNode.value, e) == 0) {
-            while (nextNode != null && compare(nextNode.value, e) == 0) {
-                if (nextNode.value == e) {
-                    return;
-                }
-                currentNode = nextNode;
-                nextNode = currentNode.nextNodes[0];
-            }
-        }
-        insertNotEnd(currentNode, insertedNode, 0);
+        // maintain
+        doMaintainWork(insertedNode);
     }
 
     /**
-     * @param insertedNode 要添加的元素
-     * @return 如果上层表中找到了e元素的存在，则返回null
+     * 在高层(0层之上)向后迭代，找到在底层中，目标位置左边、高层中有的且离目标位置比较近的节点
+     *
+     * @param e 插入值
+     * @return 离目标较近的节点
      */
-    private Node<E> findNearByNodeForAdd(Node<E> insertedNode) {
-        int maxLayer = insertedNode.nextNodes.length - 1;
-        E e = insertedNode.value;
+    private Node<E> iterateToNearBy(E e, Map<Integer, Node<E>> beforeNodeMap) {
         Node<E> currentNode = head;
-        Node<E> nextNode;
-        // 维护删除操作对currentMaxLayerIndex的影响
-        optimizeLayerIndex();
         for (int currentLayer = currentMaxLayerIndex; currentLayer > 0; currentLayer--) {
-            nextNode = currentNode.nextNodes[currentLayer];
-            if (nextNode == null) {
-                if (maxLayer >= currentLayer) {
-                    currentNode.nextNodes[currentLayer] = insertedNode;
-                }
+            if (currentNode.nextNodes[currentLayer] == null) {
+                beforeNodeMap.put(currentLayer, currentNode);
                 continue;
             }
-            // 新增元素要插入到nextNode的后面
-            while (nextNode != null && compare(nextNode.value, e) > 0) {
-                currentNode = nextNode;
-                nextNode = currentNode.nextNodes[currentLayer];
+            // 向后遍历
+            while (currentNode.nextNodes[currentLayer] != null
+                    && compare(currentNode.nextNodes[currentLayer].value, e) > 0) {
+                currentNode = currentNode.nextNodes[currentLayer];
             }
-
-            if (nextNode == null) {
-                if (maxLayer >= currentLayer) {
-                    currentNode.nextNodes[currentLayer] = insertedNode;
-                }
-                continue;
-            }
-
-            Node<E> tempCur = currentNode;
-            while (nextNode != null && compare(nextNode.value, e) == 0) {
-                if (nextNode.value == e) {
-                    return null;
-                }
-                tempCur = nextNode;
-                nextNode = tempCur.nextNodes[currentLayer];
-            }
-            if (nextNode == null) {
-                if (maxLayer >= currentLayer) {
-                    tempCur.nextNodes[currentLayer] = insertedNode;
-                }
-                continue;
-            }
-
-            if (maxLayer >= currentLayer) {
-                // 在currentNode和nextNode之间插入
-                tempCur.nextNodes[currentLayer] = insertedNode;
-                insertedNode.nextNodes[currentLayer] = nextNode;
-            }
+            beforeNodeMap.put(currentLayer, currentNode);
         }
         return currentNode;
+    }
+
+    /**
+     * 待插入节点是否已经存在于跳表之中
+     *
+     * @param beginNode 从beginNode的下一个节点开始判断，
+     * @param e         待插入节点
+     * @return 存在
+     */
+    private boolean alreadyIn(Node<E> beginNode, E e) {
+        Node<E> nextNode = beginNode.nextNodes[0];
+        if (beginNode.nextNodes[0] == null) {
+            return false;
+        }
+        int compare = compare(beginNode.nextNodes[0].value, e);
+        if (compare > 0) {
+            throw new RuntimeException("beginNode.nextNodes[0] should be the first node which matches compare(node, e) == 0");
+        } else if (compare < 0) {
+            return false;
+        }
+        while (nextNode != null && compare(nextNode.value, e) == 0) {
+            if (nextNode.value == e) {
+                return true;
+            }
+            nextNode = nextNode.nextNodes[0];
+        }
+        return false;
+    }
+
+    /**
+     * 在currentNode后面插入insertedNode，层数为layer
+     *
+     * @param currentNode  currentNode
+     * @param insertedNode insertedNode
+     * @param layer        layer
+     */
+    private void insertAfter(Node<E> currentNode, Node<E> insertedNode, int layer) {
+        Node<E> nextNode = null;
+        nextNode = currentNode.nextNodes[layer];
+        if (nextNode == null) {
+            // currentNode是最后一个元素了
+            insertedNode.previousNodes[layer] = currentNode;
+        } else {
+            // e应该插入到nextNode和currentNode之间
+            insertedNode.nextNodes[layer] = nextNode;
+            insertedNode.previousNodes[layer] = currentNode;
+            nextNode.previousNodes[layer] = insertedNode;
+        }
+        currentNode.nextNodes[layer] = insertedNode;
+    }
+
+    /**
+     * 插入后的维护工作
+     *
+     * @param insertedNode 新插入的元素
+     */
+    private void doMaintainWork(Node<E> insertedNode) {
+        int addedMaxLayerIndex = insertedNode.nextNodes.length - 1;
+        // 插入后的维护工作
+        if (currentMaxLayerIndex < addedMaxLayerIndex) {
+            currentMaxLayerIndex = addedMaxLayerIndex;
+            head.nextNodes[currentMaxLayerIndex] = insertedNode;
+        }
+        size++;
     }
 
     /**
@@ -229,44 +246,21 @@ public class MySkippedList<E extends Object> {
         return currentNode;
     }
 
-    private void insertNotEnd(Node<E> currentNode, Node<E> insertedNode, int layer) {
-        Node<E> nextNode = currentNode.nextNodes[layer];
-        if (nextNode == null) {
-            // nextNode == null说明，currentNode已经是最后一个元素了，可以直接将e插入到最后
-            insertedNode.previousNodes[layer] = currentNode;
-            currentNode.nextNodes[layer] = insertedNode;
-        } else {
-            // e应该插入到nextNode和currentNode之间
-            insertedNode.nextNodes[layer] = nextNode;
-            insertedNode.previousNodes[layer] = currentNode;
-            nextNode.previousNodes[layer] = insertedNode;
-            currentNode.nextNodes[layer] = insertedNode;
-        }
-
-        if (layer == 0) {
-            maintainAfterAdd(insertedNode.nextNodes.length, insertedNode);
-        }
-    }
-
-    private void maintainAfterAdd(int addedLayerCount, Node<E> insertedNode) {
-        // 插入后的维护工作
-        if (currentMaxLayerIndex < addedLayerCount) {
-            currentMaxLayerIndex = addedLayerCount;
-            head.nextNodes[currentMaxLayerIndex] = insertedNode;
-        }
-        size++;
-    }
-
     public E remove(E e) {
         if (e == null) {
             return null;
         }
-        Node<E> firstNode = head.nextNodes[currentMaxLayerIndex];
         // empty list
-        if (firstNode == null) {
+        if (head.nextNodes[currentMaxLayerIndex] == null) {
             return null;
         }
-        Node<E> currentNode = findNearByNodeForRemove(e);
+
+        // 维护以前的删除操作对currentMaxLayerIndex的影响
+        optimizeLayerIndex();
+        // find near by node
+        Map<Integer, Node<E>> beforeNodeMap = new HashMap<>();
+        Node<E> currentNode = iterateAndCheck(e, beforeNodeMap);
+
         if (currentNode == null) {
             return null;
         }
@@ -275,7 +269,9 @@ public class MySkippedList<E extends Object> {
                 // 逐层删除
                 for (int index = 0; index < currentNode.nextNodes.length; index++) {
                     currentNode.previousNodes[index].nextNodes[index] = currentNode.nextNodes[index];
-                    currentNode.nextNodes[index].previousNodes[index] = currentNode.previousNodes[index];
+                    if (currentNode.nextNodes[index] != null) {
+                        currentNode.nextNodes[index].previousNodes[index] = currentNode.previousNodes[index];
+                    }
                 }
                 // 清理工作
                 size--;
@@ -289,6 +285,32 @@ public class MySkippedList<E extends Object> {
         return null;
     }
 
+    /**
+     * 在高层(0层之上)向后迭代，找到在底层中，目标位置左边、高层中有的且离目标位置比较近的节点
+     *
+     * @param e 插入值
+     * @return 离目标较近的节点
+     */
+    private Node<E> iterateAndCheck(E e, Map<Integer, Node<E>> beforeNodeMap) {
+        Node<E> currentNode = head;
+        for (int currentLayer = currentMaxLayerIndex; currentLayer > 0; currentLayer--) {
+            if (currentNode.nextNodes[currentLayer] == null) {
+                beforeNodeMap.put(currentLayer, currentNode);
+                continue;
+            }
+            // 向后遍历
+            while (currentNode.nextNodes[currentLayer] != null
+                    && compare(currentNode.nextNodes[currentLayer].value, e) >= 0) {
+                currentNode = currentNode.nextNodes[currentLayer];
+                if (currentNode.value == e) {
+                    return currentNode;
+                }
+            }
+            beforeNodeMap.put(currentLayer, currentNode);
+        }
+        return currentNode;
+    }
+
     public int size() {
         return size;
     }
@@ -296,16 +318,21 @@ public class MySkippedList<E extends Object> {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        for (int index = currentMaxLayerIndex; index > -1; index--) {
-            Node<E> node = head.nextNodes[currentMaxLayerIndex];
+        for (int currentLayer = currentMaxLayerIndex; currentLayer > -1; currentLayer--) {
+            Node<E> node = head.nextNodes[currentLayer];
             if (node == null) {
-                currentMaxLayerIndex--;
-                continue;
+                if (currentMaxLayerIndex > 0) {
+                    currentMaxLayerIndex--;
+                    continue;
+                } else {
+                    break;
+                }
             }
-            builder.append(String.format("layer %d: ", currentMaxLayerIndex));
+            builder.append(String.format("layer %d: ", currentLayer));
             while (node != null) {
                 builder.append(node.value.toString());
-                node = node.nextNodes[index];
+                builder.append(",");
+                node = node.nextNodes[currentLayer];
             }
             builder.append('\n');
         }
@@ -333,39 +360,33 @@ public class MySkippedList<E extends Object> {
     }
 
     /**
-     * 生成随机的层数
+     * 生成随机的最高层的层数
      *
      * @return 最高层的层数
      */
-    private int generateLayerCount() {
-        int count = 1;
+    private int generateMaxLayerIndex() {
         optimizeLayerIndex();
 
         // 一次最多增加一层
         int maxLayerCount = currentMaxLayerIndex + 1;
-        if (head.nextNodes[currentMaxLayerIndex] != null &&
-                head.nextNodes[currentMaxLayerIndex].nextNodes[currentMaxLayerIndex] != null) {
-            maxLayerCount++;
+        if (head.nextNodes[currentMaxLayerIndex] != null) {
+            if (head.nextNodes[currentMaxLayerIndex].nextNodes[currentMaxLayerIndex] != null) {
+                maxLayerCount++;
+            }
         }
         maxLayerCount = Math.min(layerCapacity, maxLayerCount);
 
-        for (; count < maxLayerCount + 1; count++) {
-            if (halfPossibility()) {
+        int count = 1;
+        for (; count < maxLayerCount; count++) {
+            // 高一层的概率是1/4
+            if (halfPossibility() || halfPossibility()) {
                 break;
             }
         }
-
-        System.out.println(count);
-        return count;
+        return count - 1;
     }
 
-    /**
-     * 50%概率
-     *
-     * @return 50%概率
-     */
     private static boolean halfPossibility() {
-        int bound = new Random().nextInt(2);
-        return bound == 0;
+        return new Random().nextInt(2) == 0;
     }
 }

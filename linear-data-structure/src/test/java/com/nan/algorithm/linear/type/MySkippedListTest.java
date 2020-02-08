@@ -10,9 +10,19 @@ public class MySkippedListTest {
 
     @Test
     public void test() {
-        MySkippedList<String> list = new MySkippedList<>();
+        MySkippedList<Integer> list = new MySkippedList<>();
         for (int index = 0; index < 100; index++) {
-            list.add(String.valueOf(index));
+            list.add(index);
+        }
+        System.out.println(list);
+
+        for (int i = 80; i < 99; i++) {
+            list.add(i);
+        }
+        System.out.println(list);
+
+        for (int i = 20; i < 30; i++) {
+            list.remove(i);
         }
         System.out.println(list);
     }
