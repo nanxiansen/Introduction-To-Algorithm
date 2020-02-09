@@ -73,4 +73,4 @@ package: com.nan.algorithm.linear.sorting
 缺点：空间复杂度高。  
 ## 四、查找算法
 
-## 五、规划、设计相关的算法
+## 五、高级设计和分析算法
