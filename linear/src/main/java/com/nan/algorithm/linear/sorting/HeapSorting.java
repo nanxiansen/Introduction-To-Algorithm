@@ -14,7 +14,7 @@ public class HeapSorting extends BaseSorting {
     protected void sortCore() {
         buildMaxHeap(numbers.length);
         for (int index = numbers.length - 1; index > 0; index--) {
-            exchange(numbers, 0, index);
+            exchange(0, index);
             maintainMaxHeap(0, index);
         }
     }
@@ -38,7 +38,7 @@ public class HeapSorting extends BaseSorting {
         }
 
         if (largestIndex != root) {
-            exchange(numbers, root, largestIndex);
+            exchange(root, largestIndex);
             maintainMaxHeap(largestIndex, length);
         }
     }
@@ -49,11 +49,5 @@ public class HeapSorting extends BaseSorting {
 
     private int getRightIndex(int root) {
         return 2 + (root << 1);
-    }
-
-    private void exchange(Integer[] array, int index1, int index2) {
-        int temp = array[index1];
-        array[index1] = array[index2];
-        array[index2] = temp;
     }
 }

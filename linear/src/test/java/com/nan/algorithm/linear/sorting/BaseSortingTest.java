@@ -23,4 +23,10 @@ public class BaseSortingTest {
         BaseSorting sorting = new QuickSorting(Arrays.copyOf(array, array.length));
         System.out.println("QuickSorting: " + Arrays.toString(sorting.numbers));
     }
+
+    @Test
+    public void testMergeSorting() {
+        BaseSorting sorting = new MergeSorting(Arrays.copyOf(array, array.length));
+        System.out.println("MergeSorting: " + Arrays.toString(sorting.numbers));
+    }
 }

@@ -23,7 +23,6 @@ public class QuickSorting extends BaseSorting {
     }
 
     private void sortArray(int begin, int end) {
-        System.out.println(Arrays.toString(numbers));
         if (begin > end - 1) {
             return;
         }
@@ -69,14 +68,5 @@ public class QuickSorting extends BaseSorting {
         }
         sortArray(begin, firstBigIndex);
         sortArray(firstBigIndex + 1, end);
-    }
-
-    private void exchange(int index1, int index2) {
-        if (index1 == index2 || index1 >= numbers.length || index2 >= numbers.length || index1 < 0 || index2 < 0) {
-            return;
-        }
-        int temp = numbers[index1];
-        numbers[index1] = numbers[index2];
-        numbers[index2] = temp;
     }
 }
