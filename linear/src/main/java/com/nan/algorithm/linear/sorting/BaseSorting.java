@@ -10,13 +10,13 @@ public abstract class BaseSorting {
 
     public BaseSorting(Integer[] numbers) {
         this.numbers = numbers;
-        sortArray();
+        sortCore();
     }
 
     /**
      * 用着构造器中的，用来排序的方法。这是不同排序算法的核心
      */
-    protected abstract void sortArray();
+    protected abstract void sortCore();
 
     public Integer[] sort() {
         return this.numbers;

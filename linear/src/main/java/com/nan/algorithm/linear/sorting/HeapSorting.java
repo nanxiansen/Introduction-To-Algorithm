@@ -11,35 +11,35 @@ public class HeapSorting extends BaseSorting {
     }
 
     @Override
-    protected void sortArray() {
-        buildMaxHeap(numbers, numbers.length);
+    protected void sortCore() {
+        buildMaxHeap(numbers.length);
         for (int index = numbers.length - 1; index > 0; index--) {
             exchange(numbers, 0, index);
-            maintainMaxHeap(numbers, 0, index);
+            maintainMaxHeap(0, index);
         }
     }
 
-    private void buildMaxHeap(Integer[] array, int length) {
+    private void buildMaxHeap(int length) {
         int beginIndex = (length >> 1) - 1;
         for (int index = beginIndex; index >= 0; index--) {
-            maintainMaxHeap(array, index, length);
+            maintainMaxHeap(index, length);
         }
     }
 
-    private void maintainMaxHeap(Integer[] array, int root, int length) {
+    private void maintainMaxHeap(int root, int length) {
         int leftIndex = getLeftIndex(root);
         int rightIndex = getRightIndex(root);
         int largestIndex = root;
-        if (leftIndex < length && array[root] < array[leftIndex]) {
+        if (leftIndex < length && numbers[root] < numbers[leftIndex]) {
             largestIndex = leftIndex;
         }
-        if (rightIndex < length && array[largestIndex] < array[rightIndex]) {
+        if (rightIndex < length && numbers[largestIndex] < numbers[rightIndex]) {
             largestIndex = rightIndex;
         }
 
         if (largestIndex != root) {
-            exchange(array, root, largestIndex);
-            maintainMaxHeap(array, largestIndex, length);
+            exchange(numbers, root, largestIndex);
+            maintainMaxHeap(largestIndex, length);
         }
     }
 

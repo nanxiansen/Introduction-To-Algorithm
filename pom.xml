@@ -12,6 +12,8 @@
         <module>linear-data-structure</module>
         <module>array-sorting</module>
         <module>array-lookup</module>
+        <module>tree</module>
+        <module>graph</module>
     </modules>
 
     <dependencies>

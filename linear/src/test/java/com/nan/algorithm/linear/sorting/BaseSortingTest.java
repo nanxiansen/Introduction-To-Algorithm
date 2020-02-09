@@ -14,7 +14,13 @@ public class BaseSortingTest {
 
     @Test
     public void testHeapSorting() {
-        BaseSorting sorting = new HeapSorting(array);
-        System.out.println(Arrays.toString(sorting.numbers));
+        BaseSorting sorting = new HeapSorting(Arrays.copyOf(array, array.length));
+        System.out.println("HeapSorting: " + Arrays.toString(sorting.numbers));
+    }
+
+    @Test
+    public void testQuickSorting() {
+        BaseSorting sorting = new QuickSorting(Arrays.copyOf(array, array.length));
+        System.out.println("QuickSorting: " + Arrays.toString(sorting.numbers));
     }
 }
