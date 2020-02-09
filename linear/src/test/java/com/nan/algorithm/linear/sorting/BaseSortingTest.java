@@ -29,4 +29,16 @@ public class BaseSortingTest {
         BaseSorting sorting = new MergeSorting(Arrays.copyOf(array, array.length));
         System.out.println("MergeSorting: " + Arrays.toString(sorting.numbers));
     }
+
+    @Test
+    public void testBubbleSorting() {
+        BaseSorting sorting = new BubbleSorting(Arrays.copyOf(array, array.length));
+        System.out.println("BubbleSorting: " + Arrays.toString(sorting.numbers));
+    }
+
+    @Test
+    public void testInsertionSorting() {
+        BaseSorting sorting = new InsertionSorting(Arrays.copyOf(array, array.length));
+        System.out.println("InsertionSorting: " + Arrays.toString(sorting.numbers));
+    }
 }
